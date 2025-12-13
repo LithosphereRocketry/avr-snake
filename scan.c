@@ -6,9 +6,8 @@
 
 #include "matrix.h"
 
-// threshold of a 10k - 220k voltage divider
-// pullups should be at least 20k, so this gives some noise margin
-static const uint16_t adc_thresh = 1023UL * 220UL / 230UL;
+static const uint16_t adc_thresh = 1023UL * 220UL / 240UL;
+static const uint16_t rst_thresh = 1023UL * 220UL / 250UL;
 
 volatile uint8_t framebuf[5];
 static uint8_t int_framebuf[5];
@@ -38,6 +37,8 @@ void start_scan() {
 }
 
 static uint8_t current_tick = 0;
+static uint8_t adc_line = 0;
+
 ISR(TIMER1_COMPA_vect) {
     if(current_tick < 30) { // 0 - 29: show LED
         uint8_t row = current_tick / 6;
@@ -52,11 +53,12 @@ ISR(TIMER1_COMPA_vect) {
     } else if(current_tick == 30) {
         // Precharge pull-up resistors
         DDRB = 0;
-        PORTB = BTNA | BTNB | BTNC | BTND;
+        PORTB = ADC_PINS;
     } else if(current_tick == 31) {
         // Start ADC conversion
         int_btnmask = 0;
-        ADMUX = 0;
+        adc_line = 0;
+        ADMUX = adc_line;
         ADCSRA |= (1 << ADEN) | (1 << ADSC);
     }
 
@@ -69,19 +71,19 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 ISR(ADC_vect) {
-    uint8_t adc_line = ADMUX;
-
     // make sure the ADC registers are read in the correct order
     uint8_t adcl = ADCL;
     uint8_t adch = ADCH;
     // hopefully gcc recognizes this idiom as not actually requiring a shift
     uint16_t adcval = ((uint16_t) adch) << 8 | adcl;
-    if(adcval < adc_thresh) int_btnmask |= (1 << adc_line);
+    if(adcval < (adc_line == 0 ? rst_thresh : adc_thresh)) int_btnmask |= (1 << adc_line);
 
     if(adc_line < 3) {
-        ADMUX++;
+        adc_line++;
+        ADMUX = adc_line;
         ADCSRA |= (1 << ADSC);
     } else {
         ADCSRA &= ~(1 << ADEN);
+        PORTB = 0;
     }
 }

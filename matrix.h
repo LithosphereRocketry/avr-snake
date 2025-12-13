@@ -8,6 +8,8 @@
 #define BTNC (1 << 0)
 #define BTND (1 << 1)
 
+#define ADC_PINS (0b00111100)
+
 #define PINK (1 << 2) // adc1
 #define BLUE (1 << 1)
 #define TEAL (1 << 5) // reset, adc0
