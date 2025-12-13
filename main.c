@@ -1,15 +1,19 @@
 #include "avr/io.h"
+#include "avr/interrupt.h"
+#include "avr/sleep.h"
 
-#include "misc.h"
+#include "scan.h"
+#include "game.h"
 
 int main() {
-    DDRB |= 1<<4;
+    set_sleep_mode(SLEEP_MODE_IDLE);
+    start_scan();
+    sei();
+    setup();
+
     while(1) {
-        PORTB |= 1<<4 | 1<<3;
-        for(uint32_t i = 10; i > 0; i--) NOP;
-        PORTB &= ~(1<<4);
-        for(uint32_t i = 90; i > 0; i--) NOP;
-        PORTB &= ~(1<<3);
-        for(uint32_t i = 500; i > 0; i--) NOP;
+        do { sleep_mode(); } while(!wants_wake);
+        wants_wake = false;
+        loop();
     }
 }
