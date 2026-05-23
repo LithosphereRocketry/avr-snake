@@ -6,8 +6,9 @@
 
 #include "matrix.h"
 
-static const uint16_t adc_thresh = 1023UL * 220UL / 240UL;
-static const uint16_t rst_thresh = 1023UL * 220UL / 250UL;
+// determined by basically trial and error
+static const uint16_t adc_thresh = 1023UL * 11/12; // about 500mV drop on normal pins, set a threshold at half that = 250mV at 3V VCC
+static const uint16_t rst_thresh = 1023UL * 7/8; // about 750mV drop on reset pin
 
 volatile uint8_t framebuf[5];
 static uint8_t int_framebuf[5];
@@ -28,9 +29,10 @@ void start_scan() {
     move_framebuf();
     // 8MHz
     TCCR1 = (1 << CTC1) | 0b0101; // divide by 16
-    OCR1C = 208; // reset at 208
-    OCR1A = 1; // C can't interrupt in CTC mode so we have it immediately cause A
-    TIMSK = (1 << OCIE1A); // interrupt on overflow
+    OCR1C = 253; // reset at 253
+    // should be about 33*60Hz
+    OCR1A = 1; // C can't interrupt in CTC mode so we have it immediately cause
+    TIMSK = (1 << OCIE1A); // an interrupt on compare A
 
     // ADC
     ADCSRA = (1 << ADIE); // enable ADC interrupts
@@ -63,7 +65,7 @@ ISR(TIMER1_COMPA_vect) {
     }
 
     current_tick ++;
-    if(current_tick == 40) {
+    if(current_tick == 33) {
         move_framebuf();
         current_tick = 0;
         wants_wake = true;

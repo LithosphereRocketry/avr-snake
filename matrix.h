@@ -4,9 +4,9 @@
 #include "stdint.h"
 
 #define BTNA (1 << 2)
-#define BTNB (1 << 3)
-#define BTNC (1 << 0)
-#define BTND (1 << 1)
+#define BTNC (1 << 3)
+#define BTND (1 << 0)
+#define BTNB (1 << 1)
 
 #define ADC_PINS (0b00111100)
 
